@@ -47,6 +47,7 @@ namespace Peliculas.API.Controllers
         public async Task<ActionResult> Post([FromForm]ActorCreacionDto creacionDto)
         {
             var entidad = mapper.Map<Actor>(creacionDto);
+           
             if (creacionDto.Foto != null)
             {
                 using (var memoryStream = new MemoryStream())
@@ -54,10 +55,11 @@ namespace Peliculas.API.Controllers
                     await creacionDto.Foto.CopyToAsync(memoryStream);
                     var contenido = memoryStream.ToArray();
                     var extension = Path.GetExtension(creacionDto.Foto.FileName);
-                    entidad.UrlFoto = await manageFiles.SaveFile(contenido, extension, contenedor, creacionDto.Foto.ContentType);
+                    var contentType = creacionDto.Foto.ContentType;
+                    entidad.UrlFoto = await manageFiles.SaveFile(contenido, extension, contenedor, contentType);
                 }
-
             }
+
             context.Add(entidad);
             await context.SaveChangesAsync();
             return Ok();
