@@ -5,7 +5,8 @@ using Microsoft.EntityFrameworkCore;
 using Peliculas.API.Context;
 using Peliculas.API.Dtos;
 using Peliculas.API.Entidades;
-using Peliculas.API.Servicios.Files;
+using Peliculas.API.Helpers;
+using Peliculas.API.Servicios.FilesManager;
 
 namespace Peliculas.API.Controllers
 {
@@ -15,20 +16,22 @@ namespace Peliculas.API.Controllers
     {
         private readonly ApplicationDbContext context;
         private readonly IMapper mapper;
-        private readonly IManageFiles manageFiles;
+        private readonly IFileManager manageFiles;
         private readonly string contenedor = "actores";
 
-        public ActorController(ApplicationDbContext context,IMapper mapper, IManageFiles manageFiles)
+        public ActorController(ApplicationDbContext context,IMapper mapper, IFileManager manageFiles)
         {
             this.context = context;
-            this.mapper = mapper;
+            this.mapper = mapper;            
             this.manageFiles = manageFiles;
         }
 
         [HttpGet]
-        public async Task<ActionResult<List<ActorDto>>> Get()
+        public async Task<ActionResult<List<ActorDto>>> Get([FromQuery] PaginacionDto paginacion)
         {
-            var entidades = await context.Actores.ToListAsync();
+            var queryable = context.Actores.AsQueryable();
+            await HttpContext.InsertarPaginasHeader(queryable, paginacion.RegistrosPorPagina);
+            var entidades = await queryable.Paginacion(paginacion).ToListAsync();
             return mapper.Map<List<ActorDto>>(entidades);
         }
 
@@ -56,7 +59,7 @@ namespace Peliculas.API.Controllers
                     var contenido = memoryStream.ToArray();
                     var extension = Path.GetExtension(creacionDto.Foto.FileName);
                     var contentType = creacionDto.Foto.ContentType;
-                    entidad.UrlFoto = await manageFiles.SaveFile(contenido, extension, contenedor, contentType);
+                    entidad.UrlFoto = await manageFiles.Save(contenido,contenedor,extension,contentType);
                 }
             }
 
@@ -83,7 +86,8 @@ namespace Peliculas.API.Controllers
                     await creacionDto.Foto.CopyToAsync(memoryStream);
                     var contenido = memoryStream.ToArray();
                     var extension = Path.GetExtension(creacionDto.Foto.FileName);
-                    actorDB.UrlFoto = await manageFiles.EditFile(contenido,extension,contenedor,actorDB.UrlFoto,creacionDto.Foto.ContentType);
+                    var contentType = creacionDto.Foto.ContentType;
+                    actorDB.UrlFoto = await manageFiles.Edit(contenido,contenedor,extension,contentType,actorDB.UrlFoto);
                 }
 
             }

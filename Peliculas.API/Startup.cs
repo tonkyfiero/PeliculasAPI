@@ -1,7 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Peliculas.API.Context;
-using Peliculas.API.Servicios.Files;
-using Peliculas.API.Servicios.Files.Azure;
+using Peliculas.API.Servicios.FilesManager;
 
 namespace Peliculas.API
 {
@@ -17,11 +16,12 @@ namespace Peliculas.API
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddAutoMapper(typeof(Startup));
-            services.AddTransient<IManageFiles, ManageFilesAzure>();
+            services.AddTransient<IFileManager, FilaManagerAzure>();
             services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(configuration.GetConnectionString("PeliculaDb")));
             services.AddControllers();
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen();
+            services.AddHttpContextAccessor();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
@@ -33,6 +33,7 @@ namespace Peliculas.API
                 app.UseDeveloperExceptionPage();
             }
             app.UseHttpsRedirection();
+            app.UseStaticFiles();
             app.UseRouting();
             app.UseAuthorization();
             app.UseEndpoints(endpoints => { endpoints.MapControllers(); });
