@@ -1,5 +1,5 @@
 ﻿using AutoMapper;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Peliculas.API.Context;
@@ -107,6 +107,32 @@ namespace Peliculas.API.Controllers
 
             context.Remove(new Actor() { Id = id });
             await context.SaveChangesAsync();
+            return NoContent();
+        }
+
+        [HttpPatch("{id:int}")]
+        public async Task<ActionResult> Patch(int id, [FromBody] JsonPatchDocument<ActorPatchDto> jsonPatchDocument)
+        {
+            var entidadDb = await context.Actores.FirstOrDefaultAsync(x => x.Id == id);
+
+            if (entidadDb == null)
+            {
+                return NotFound();
+            }
+
+            var entidadDto = mapper.Map<ActorPatchDto>(entidadDb);
+            jsonPatchDocument.ApplyTo(entidadDto,ModelState);
+
+            var isValid = TryValidateModel(entidadDto);
+
+            if (!isValid) {
+                return BadRequest(ModelState);
+            }
+
+            mapper.Map(entidadDto, entidadDb);
+
+            await context.SaveChangesAsync();            
+
             return NoContent();
         }
     }

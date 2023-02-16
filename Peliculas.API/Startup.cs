@@ -18,7 +18,7 @@ namespace Peliculas.API
             services.AddAutoMapper(typeof(Startup));
             services.AddTransient<IFileManager, FilaManagerAzure>();
             services.AddDbContext<ApplicationDbContext>(options => options.UseSqlServer(configuration.GetConnectionString("PeliculaDb")));
-            services.AddControllers();
+            services.AddControllers().AddNewtonsoftJson();
             services.AddEndpointsApiExplorer();
             services.AddSwaggerGen();
             services.AddHttpContextAccessor();
